@@ -27,6 +27,7 @@ func Listen(address string) {
 	if err != nil {
 		panic(err)
 	}
+	fmt.Printf("Server listening at %v\n", address)
 	defer func() { _ = listener.Close() }()
 	for {
 		connection, err := listener.Accept()
