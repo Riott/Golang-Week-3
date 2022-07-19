@@ -24,28 +24,34 @@ var store = kvs.InitStore()
 
 func Listen(address string) {
 	listener, err := net.Listen("tcp", address)
+
 	if err != nil {
 		panic(err)
 	}
+
 	fmt.Printf("Server listening at %v\n", address)
+
 	defer func() { _ = listener.Close() }()
+
 	for {
 		connection, err := listener.Accept()
+
 		if err != nil {
 			break
 		}
+
 		go func() {
 			ServerLogger.Printf("%s: Client Connected", connection.RemoteAddr())
 			handle(connection)
 			connection.Close()
 		}()
-
 	}
 }
 
 func handle(connection io.ReadWriter) {
 	for {
 		cmd, err := readCommandHeader(connection)
+
 		if err != nil {
 			return
 		}
@@ -53,7 +59,6 @@ func handle(connection io.ReadWriter) {
 		if finish := handleServerCommand(cmd, connection); finish {
 			return
 		}
-
 	}
 }
 
@@ -70,13 +75,18 @@ func readCommandHeader(connection io.ReadWriter) (Command, error) {
 
 func handleServerCommand(cmd Command, connection io.ReadWriter) bool {
 	ServerLogger.Printf("Command Receieved: %s\n", cmd)
+
 	switch cmd {
+
 	case commandPut:
 		serverPutHandler(connection)
+
 	case commandGet:
 		serverGetHandler(connection)
+
 	case commandDelete:
 		serverDeleteHandler(connection)
+
 	case commandBye:
 		return true
 	}
@@ -148,9 +158,11 @@ func readArgument(connection io.ReadWriter) (string, error) {
 	io.ReadFull(connection, argValueLengthBuffer)
 
 	argValueLength, err := strconv.Atoi(string(argValueLengthBuffer))
+
 	if err != nil {
 		return "", err
 	}
+
 	// read the value and return
 	argBuffer := make([]byte, argValueLength)
 	io.ReadFull(connection, argBuffer)
@@ -163,6 +175,7 @@ func readArgument(connection io.ReadWriter) (string, error) {
 func sendValue(value string, connection io.ReadWriter) {
 	length := len(value)
 	digitLength := len(fmt.Sprintf("%d", length))
+
 	fmt.Fprintf(connection, "val%d%d%s", digitLength, length, value)
 	ServerLogger.Printf("sent to client: val%d%d%s", digitLength, length, value)
 }
