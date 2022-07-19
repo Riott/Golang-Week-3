@@ -33,19 +33,26 @@ func Listen(address string) {
 		if err != nil {
 			break
 		}
-		go handle(connection)
+		go func() {
+			ServerLogger.Printf("%s: Client Connected", connection.RemoteAddr())
+			handle(connection)
+			connection.Close()
+		}()
 
 	}
 }
 
-func handle(connection net.Conn) {
-	ServerLogger.Printf("%s: Client Connected", connection.RemoteAddr())
+func handle(connection io.ReadWriter) {
 	for {
 		cmd, err := readCommandHeader(connection)
-		if err == nil {
-			handleServerCommand(cmd, connection)
-
+		if err != nil {
+			return
 		}
+
+		if finish := handleServerCommand(cmd, connection); finish {
+			return
+		}
+
 	}
 }
 
@@ -60,28 +67,26 @@ func readCommandHeader(connection io.ReadWriter) (Command, error) {
 	return Command(buffer), nil
 }
 
-func handleServerCommand(cmd Command, connection net.Conn) {
+func handleServerCommand(cmd Command, connection io.ReadWriter) bool {
 	ServerLogger.Printf("Command Receieved: %s\n", cmd)
-
 	switch cmd {
 	case commandPut:
 		serverPutHandler(connection)
-
 	case commandGet:
 		serverGetHandler(connection)
-
 	case commandDelete:
 		serverDeleteHandler(connection)
 	case commandBye:
-		serverByeHandler(connection)
-
+		return true
 	}
+	return false
 }
 
 func serverPutHandler(connection io.ReadWriter) {
 	key, err := readArgument(connection)
 
 	if err != nil {
+		io.ReadAll(connection)
 		fmt.Fprintf(connection, "err")
 		return
 	}
@@ -89,6 +94,7 @@ func serverPutHandler(connection io.ReadWriter) {
 	value, err := readArgument(connection)
 
 	if err != nil {
+		io.ReadAll(connection)
 		fmt.Fprintf(connection, "err")
 		return
 	}
@@ -133,12 +139,6 @@ func serverDeleteHandler(connection io.ReadWriter) {
 	fmt.Fprintf(connection, "ack")
 }
 
-func serverByeHandler(connection net.Conn) {
-	connection.Close()
-	ServerLogger.Printf("%s: Client Connection closed forcibly by host", connection.RemoteAddr())
-
-}
-
 func readArgument(connection io.ReadWriter) (string, error) {
 	// first byte determines how many bytes to read next
 	argLengthBuffer := make([]byte, 1)
@@ -169,16 +169,7 @@ func readArgument(connection io.ReadWriter) (string, error) {
 
 func sendValue(value string, connection io.ReadWriter) {
 	length := len(value)
-	digitLength := countDigits(length)
+	digitLength := len(fmt.Sprintf("%d", length))
 	fmt.Fprintf(connection, "val%d%d%s", digitLength, length, value)
 	ServerLogger.Printf("sent to client: val%d%d%s", digitLength, length, value)
-}
-
-// there has to be a better way
-func countDigits(number int) int {
-	if number < 10 {
-		return 1
-	} else {
-		return 1 + countDigits(number/10)
-	}
 }

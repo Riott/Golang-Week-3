@@ -39,7 +39,6 @@ const (
 
 var ErrKeyNotFound = errors.New("the key wasn't present in the store")
 var ErrPutFailed = errors.New("something went wrong trying to put key into store")
-var ErrDeleteFailed = errors.New("something went wrong trying to delete")
 
 func InitStore() *KVStore {
 	keyValueStore := KVStore{store: map[string]string{}, requests: make(chan *readWriteOperation)}
@@ -102,9 +101,6 @@ func (store KVStore) Get(key string) (string, error) {
 func (store *KVStore) Delete(key string) error {
 	delete := &readWriteOperation{key: key, operation: StoreDelete, response: make(chan Response)}
 	store.requests <- delete
-	response := <-delete.response
-	if response.responseCode != ResponseOk {
-		return ErrDeleteFailed
-	}
+	<-delete.response
 	return nil
 }
