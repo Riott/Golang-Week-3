@@ -217,3 +217,65 @@ func TestHandleServerCommand(t *testing.T) {
 	byeBuffer := bytes.NewBuffer([]byte("bye"))
 	handle(byeBuffer)
 }
+
+var value = ""
+
+func BenchmarkReadArgument(b *testing.B) {
+	v := ""
+	for i := 0; i < b.N; i++ {
+		buffer := bytes.NewBuffer([]byte("212stored value"))
+		v, _ = readArgument(buffer)
+	}
+	value = v
+}
+
+func BenchmarkSendValue(b *testing.B) {
+	for i := 0; i < b.N; i++ {
+		buffer := bytes.NewBuffer([]byte("212stored value"))
+		sendValue("myvalue", buffer)
+	}
+}
+
+var command Command
+
+func BenchmarkReadCommandHeader(b *testing.B) {
+	for i := 0; i < b.N; i++ {
+		buffer := bytes.NewBuffer([]byte("put13key212stored"))
+		command, _ = readCommandHeader(buffer)
+	}
+}
+
+func BenchmarkServerPutHandler(b *testing.B) {
+	for i := 0; i < b.N; i++ {
+		buffer := bytes.NewBuffer([]byte("put13key212stored"))
+		serverPutHandler(buffer)
+	}
+}
+
+func BenchmarkServerGetHandler(b *testing.B) {
+	buffer := bytes.NewBuffer([]byte("put13key212stored"))
+	serverPutHandler(buffer)
+	b.ResetTimer()
+
+	for i := 0; i < b.N; i++ {
+		buffer := bytes.NewBuffer([]byte("get13key"))
+		serverGetHandler(buffer)
+	}
+}
+
+func BenchmarkServerDeleteHandler(b *testing.B) {
+	buffer := bytes.NewBuffer([]byte("put13key212stored"))
+	serverPutHandler(buffer)
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		buffer := bytes.NewBuffer([]byte("del13key"))
+		serverDeleteHandler(buffer)
+	}
+}
+
+func BenchmarkHandle(b *testing.B) {
+	for i := 0; i < b.N; i++ {
+		buffer := bytes.NewBuffer([]byte("put13key212stored"))
+		handle(buffer)
+	}
+}
