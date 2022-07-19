@@ -1,3 +1,6 @@
 logs/server.log
 go.sum
 pkg/kvs/coverage.out
+internal/server/cpu.prof
+internal/server/mem.prof
+internal/server/server.test.exe
