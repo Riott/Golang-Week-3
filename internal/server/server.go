@@ -49,7 +49,7 @@ func handle(connection net.Conn) {
 	}
 }
 
-func readCommandHeader(connection net.Conn) (Command, error) {
+func readCommandHeader(connection io.ReadWriter) (Command, error) {
 	buffer := make([]byte, commandLength)
 	_, err := io.ReadFull(connection, buffer)
 
@@ -78,7 +78,7 @@ func handleServerCommand(cmd Command, connection net.Conn) {
 	}
 }
 
-func serverPutHandler(connection net.Conn) {
+func serverPutHandler(connection io.ReadWriter) {
 	key, err := readArgument(connection)
 
 	if err != nil {
@@ -97,7 +97,7 @@ func serverPutHandler(connection net.Conn) {
 	fmt.Fprintf(connection, "ack")
 }
 
-func serverGetHandler(connection net.Conn) {
+func serverGetHandler(connection io.ReadWriter) {
 	key, err := readArgument(connection)
 
 	if err != nil {
@@ -115,7 +115,7 @@ func serverGetHandler(connection net.Conn) {
 	sendValue(value, connection)
 }
 
-func serverDeleteHandler(connection net.Conn) {
+func serverDeleteHandler(connection io.ReadWriter) {
 	key, err := readArgument(connection)
 
 	if err != nil {
@@ -139,7 +139,7 @@ func serverByeHandler(connection net.Conn) {
 
 }
 
-func readArgument(connection net.Conn) (string, error) {
+func readArgument(connection io.ReadWriter) (string, error) {
 	// first byte determines how many bytes to read next
 	argLengthBuffer := make([]byte, 1)
 	io.ReadFull(connection, argLengthBuffer)
@@ -167,7 +167,7 @@ func readArgument(connection net.Conn) (string, error) {
 	return arg, nil
 }
 
-func sendValue(value string, connection net.Conn) {
+func sendValue(value string, connection io.ReadWriter) {
 	length := len(value)
 	digitLength := countDigits(length)
 	fmt.Fprintf(connection, "val%d%d%s", digitLength, length, value)
