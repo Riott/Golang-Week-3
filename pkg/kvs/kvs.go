@@ -98,9 +98,8 @@ func (store KVStore) Get(key string) (string, error) {
 	return response.responseValue, nil
 }
 
-func (store *KVStore) Delete(key string) error {
+func (store *KVStore) Delete(key string) {
 	delete := &readWriteOperation{key: key, operation: StoreDelete, response: make(chan Response)}
 	store.requests <- delete
 	<-delete.response
-	return nil
 }

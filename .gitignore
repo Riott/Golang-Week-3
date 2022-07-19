@@ -1,1 +1,3 @@
 logs/server.log
+go.sum
+pkg/kvs/coverage.out

@@ -34,10 +34,12 @@ func TestGet(t *testing.T) {
 
 func TestDelete(t *testing.T) {
 	store.Put("key1", "1234")
-	err := store.Delete("key1")
+	store.Delete("key1")
+	_, err := store.Get("key1")
 	if err != nil {
-		t.Errorf("Was unable to delete key")
+		return
 	}
+	t.Error("should have returned key not found")
 
 }
 

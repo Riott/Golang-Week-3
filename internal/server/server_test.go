@@ -37,17 +37,23 @@ func TestServerPutHandler(t *testing.T) {
 	readCommandHeader(buffer)
 	serverPutHandler(buffer)
 	response = make([]byte, 3)
+	buffer.Next(10)
 	io.ReadFull(buffer, response)
+
 	if string(response) != "err" {
 		t.Error("should have got an error from reading args")
 	}
 
 	// break second arg
 	buffer = bytes.NewBuffer([]byte("put13key312stored value"))
+
 	readCommandHeader(buffer)
 	serverPutHandler(buffer)
+
 	response = make([]byte, 3)
+	buffer.Next(11)
 	io.ReadFull(buffer, response)
+
 	if string(response) != "err" {
 		t.Error("should have got an error from reading args")
 	}
@@ -84,18 +90,32 @@ func TestServerGetHandler(t *testing.T) {
 	}
 
 	//break argument
-	buffer = bytes.NewBuffer([]byte("put13key312stored value"))
+	buffer = bytes.NewBuffer([]byte("get23key"))
 	readCommandHeader(buffer)
-	serverPutHandler(buffer)
+	serverGetHandler(buffer)
+
 	response = make([]byte, 3)
+	buffer.Next(2)
 	io.ReadFull(buffer, response)
+
 	if string(response) != "err" {
 		t.Error("should have got an error from reading args")
+	}
+	// try to get a non existing key
+	buffer = bytes.NewBuffer([]byte("get14key1"))
+	readCommandHeader(buffer)
+	serverGetHandler(buffer)
+
+	response = make([]byte, 3)
+	io.ReadFull(buffer, response)
+
+	if string(response) != "nil" {
+		t.Error("should have received nil trying to query non existing key")
 	}
 }
 
 func TestServerDeleteHandler(t *testing.T) {
-	buffer := bytes.NewBuffer([]byte("get13key"))
+	buffer := bytes.NewBuffer([]byte("put13key212stored value"))
 	_, err := readCommandHeader(buffer)
 
 	if err != nil {
@@ -123,6 +143,19 @@ func TestServerDeleteHandler(t *testing.T) {
 
 	if string(response) != "ack" {
 		t.Error("server delete handler failed")
+	}
+
+	// break the argument
+	buffer = bytes.NewBuffer([]byte("del23key"))
+	readCommandHeader(buffer)
+	serverDeleteHandler(buffer)
+
+	response = make([]byte, 3)
+	buffer.Next(2)
+	io.ReadFull(buffer, response)
+
+	if string(response) != "err" {
+		t.Error("should have got an error from reading args")
 	}
 }
 

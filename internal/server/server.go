@@ -86,7 +86,6 @@ func serverPutHandler(connection io.ReadWriter) {
 	key, err := readArgument(connection)
 
 	if err != nil {
-		io.ReadAll(connection)
 		fmt.Fprintf(connection, "err")
 		return
 	}
@@ -94,7 +93,6 @@ func serverPutHandler(connection io.ReadWriter) {
 	value, err := readArgument(connection)
 
 	if err != nil {
-		io.ReadAll(connection)
 		fmt.Fprintf(connection, "err")
 		return
 	}
@@ -129,13 +127,7 @@ func serverDeleteHandler(connection io.ReadWriter) {
 		return
 	}
 
-	err = store.Delete(key)
-
-	if err != nil {
-		fmt.Fprintf(connection, "err")
-		return
-	}
-
+	store.Delete(key)
 	fmt.Fprintf(connection, "ack")
 }
 
