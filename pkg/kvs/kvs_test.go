@@ -43,6 +43,31 @@ func TestDelete(t *testing.T) {
 
 }
 
+func BenchmarkPut(b *testing.B) {
+	for i := 0; i < b.N; i++ {
+		store.Put("key1", "1234")
+	}
+}
+
+var value string
+
+func BenchmarkGet(b *testing.B) {
+	store.Put("key1", "1234")
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		value, _ = store.Get("key1")
+
+	}
+}
+
+func BenchmarkDelete(b *testing.B) {
+	store.Put("key1", "1234")
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		store.Delete("key1")
+	}
+}
+
 func TestMain(m *testing.M) {
 	go func() {
 		store = kvs.InitStore()
