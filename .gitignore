@@ -12,3 +12,5 @@ cmd/logs.zip
 cmd/tcp_kvs.zip
 cmd/tcpkvsserver/feelinglucky.zip
 .vscode/launch.json
+tcp_kvs.exe
+coverage.out

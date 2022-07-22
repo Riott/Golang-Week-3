@@ -24,6 +24,7 @@ type Command string
 var ServerLogger = logger.InitLogger()
 var store = kvs.InitStore()
 
+// notest
 func Listen(listenAddress, udpUpdateAddress string) {
 	listener, err := net.Listen("tcp", listenAddress)
 
@@ -50,58 +51,15 @@ func Listen(listenAddress, udpUpdateAddress string) {
 	}
 }
 
-func sendBroadcastCommand(connection io.ReadWriter) {
-	packetConn, err := net.ListenPacket("udp4", ":2307")
-	if err != nil {
-		return
-	}
-	defer packetConn.Close()
-
-	addr, err := net.ResolveUDPAddr("udp4", "192.168.1.255:2306")
-	if err != nil {
-		return
-	}
-	data, err := io.ReadAll(connection)
-	if err != nil {
-		return
-	}
-	_, err = packetConn.WriteTo([]byte(data), addr)
-	if err != nil {
-		return
-	}
-}
-
-func rebuildAndSendUpdate(cmd Command, arg1, arg2 string) {
-	switch cmd {
-
-	case commandPut:
-		keyLength := len(arg1)
-		keyDigitLength := len(fmt.Sprintf("%d", keyLength))
-
-		valueLength := len(arg2)
-		valueDigitLength := len(fmt.Sprintf("%d", valueLength))
-
-		commandBuffer := bytes.NewBuffer([]byte(fmt.Sprintf("%s%d%d%s%d%d%s", cmd, keyDigitLength, keyLength, arg1, valueDigitLength, valueLength, arg2)))
-
-		sendBroadcastCommand(commandBuffer)
-
-	case commandDelete:
-		keyLength := len(arg1)
-		keyDigitLength := len(fmt.Sprintf("%d", keyLength))
-
-		commandBuffer := bytes.NewBuffer([]byte(fmt.Sprintf("%s%d%d%s", cmd, keyDigitLength, keyLength, arg1)))
-
-		sendBroadcastCommand(commandBuffer)
-	}
-}
-
 func listenForBroadcast(address string) {
 	fmt.Printf("Server listening for updates at %v\n", address)
 
 	packetConn, err := net.ListenPacket("udp4", address)
+
 	if err != nil {
 		return
 	}
+
 	defer packetConn.Close()
 
 	for {
@@ -118,7 +76,8 @@ func listenForBroadcast(address string) {
 
 		localIP := getLocalIP()
 		updateIP := addr.String()
- 		if strings.Contains(updateIP, localIP) {
+
+		if strings.Contains(updateIP, localIP) {
 			fmt.Printf("%s ignoring update from self %s\n", addr, buffer[:n])
 			ServerLogger.Printf("%s ignoring update from self %s\n", addr, buffer[:n])
 			continue
@@ -177,6 +136,7 @@ func readCommandHeader(connection io.ReadWriter) (Command, error) {
 
 func handleServerCommand(cmd Command, connection io.ReadWriter, udpUpdate bool) bool {
 	ServerLogger.Printf("Command Receieved: %s\n", cmd)
+
 	switch cmd {
 
 	case commandPut:
@@ -191,6 +151,7 @@ func handleServerCommand(cmd Command, connection io.ReadWriter, udpUpdate bool) 
 	case commandBye:
 		return true
 	}
+
 	return false
 }
 
@@ -213,7 +174,8 @@ func serverPutHandler(connection io.ReadWriter, udpUpdate bool) {
 	fmt.Fprintf(connection, "ack")
 
 	if !udpUpdate {
-		rebuildAndSendUpdate(commandPut, key, value)
+		buffer := rebuildCommandForUpdate(commandPut, key, value)
+		sendBroadcastCommand(buffer)
 	}
 }
 
@@ -245,8 +207,10 @@ func serverDeleteHandler(connection io.ReadWriter, udpUpdate bool) {
 
 	store.Delete(key)
 	fmt.Fprintf(connection, "ack")
+
 	if !udpUpdate {
-		rebuildAndSendUpdate(commandDelete, key, "")
+		buffer := rebuildCommandForUpdate(commandDelete, key, "")
+		sendBroadcastCommand(buffer)
 	}
 }
 
@@ -286,4 +250,54 @@ func sendValue(value string, connection io.ReadWriter) {
 
 	fmt.Fprintf(connection, "val%d%d%s", digitLength, length, value)
 	ServerLogger.Printf("sent to client: val%d%d%s", digitLength, length, value)
+}
+
+func rebuildCommandForUpdate(cmd Command, arg1, arg2 string) io.ReadWriter {
+	switch cmd {
+
+	case commandPut:
+		keyLength := len(arg1)
+		keyDigitLength := len(fmt.Sprintf("%d", keyLength))
+
+		valueLength := len(arg2)
+		valueDigitLength := len(fmt.Sprintf("%d", valueLength))
+
+		commandBuffer := bytes.NewBuffer([]byte(fmt.Sprintf("%s%d%d%s%d%d%s", cmd, keyDigitLength, keyLength, arg1, valueDigitLength, valueLength, arg2)))
+		return commandBuffer
+
+	case commandDelete:
+		keyLength := len(arg1)
+		keyDigitLength := len(fmt.Sprintf("%d", keyLength))
+
+		commandBuffer := bytes.NewBuffer([]byte(fmt.Sprintf("%s%d%d%s", cmd, keyDigitLength, keyLength, arg1)))
+		return commandBuffer
+
+	}
+
+	return nil
+}
+
+// notest
+func sendBroadcastCommand(connection io.ReadWriter) {
+	packetConn, err := net.ListenPacket("udp4", ":2307")
+
+	if err != nil {
+		return
+	}
+
+	defer packetConn.Close()
+
+	addr, err := net.ResolveUDPAddr("udp4", "192.168.1.255:2306")
+	if err != nil {
+		return
+	}
+
+	data, err := io.ReadAll(connection)
+	if err != nil {
+		return
+	}
+	_, err = packetConn.WriteTo([]byte(data), addr)
+	if err != nil {
+		return
+	}
 }

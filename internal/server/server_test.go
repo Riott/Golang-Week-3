@@ -9,9 +9,11 @@ import (
 func TestReadCommandHeader(t *testing.T) {
 	buffer := bytes.NewBuffer([]byte("put13key212stored value"))
 	cmd, err := readCommandHeader(buffer)
+
 	if err != nil {
 		t.Error("something went wrong reading the command")
 	}
+
 	if cmd != commandPut {
 		t.Error("command parsing failed")
 	}
@@ -24,6 +26,7 @@ func TestServerPutHandler(t *testing.T) {
 	if err != nil {
 		t.Error("something went wrong reading the command")
 	}
+
 	serverPutHandler(buffer, true)
 
 	response := make([]byte, 3)
@@ -32,6 +35,7 @@ func TestServerPutHandler(t *testing.T) {
 	if string(response) != "ack" {
 		t.Error("server put handler failed")
 	}
+
 	// break first arg
 	buffer = bytes.NewBuffer([]byte("put93key212stored value"))
 	readCommandHeader(buffer)
@@ -66,6 +70,7 @@ func TestServerGetHandler(t *testing.T) {
 	if err != nil {
 		t.Error("something went wrong reading the command")
 	}
+
 	serverPutHandler(buffer, true)
 
 	response := make([]byte, 3)
@@ -78,9 +83,11 @@ func TestServerGetHandler(t *testing.T) {
 	buffer = bytes.NewBuffer([]byte("get13key"))
 
 	_, err = readCommandHeader(buffer)
+
 	if err != nil {
 		t.Error("something went wrong reading the command")
 	}
+
 	serverGetHandler(buffer)
 	response = make([]byte, 18)
 	io.ReadFull(buffer, response)
@@ -216,6 +223,29 @@ func TestHandleServerCommand(t *testing.T) {
 
 	byeBuffer := bytes.NewBuffer([]byte("bye"))
 	handle(byeBuffer, true)
+}
+
+func TestGetLocalIP(t *testing.T) {
+	if getLocalIP() != "192.168.1.9" {
+		t.Error("incorrect ip received for this device") // obviously a very brittle test
+	}
+}
+
+func TestRebuildCommandForUpdate(t *testing.T) {
+	putCommandExpected := "put13key16stored"
+	delCommandExpected := "del13key"
+
+	buffer := rebuildCommandForUpdate(commandPut, "key", "stored")
+
+	if commandBytes, _ := io.ReadAll(buffer); string(commandBytes) != putCommandExpected {
+		t.Errorf("incorrect command string for put %s expected, got: %s", putCommandExpected, string(commandBytes))
+	}
+
+	buffer = rebuildCommandForUpdate(commandDelete, "key", "")
+
+	if commandBytes, _ := io.ReadAll(buffer); string(commandBytes) != delCommandExpected {
+		t.Error("incorrect command string for del")
+	}
 }
 
 var value = ""
