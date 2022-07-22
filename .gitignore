@@ -4,3 +4,11 @@ pkg/kvs/coverage.out
 internal/server/cpu.prof
 internal/server/mem.prof
 internal/server/server.test.exe
+cmd/logs/server.log.txt
+cmd/tcpkvsserver/logs/server.log
+internal/server.log
+cmd/tcpkvsserver/tcp_kvs.exe
+cmd/logs.zip
+cmd/tcp_kvs.zip
+cmd/tcpkvsserver/feelinglucky.zip
+.vscode/launch.json

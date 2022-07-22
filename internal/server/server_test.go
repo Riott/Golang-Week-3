@@ -24,7 +24,7 @@ func TestServerPutHandler(t *testing.T) {
 	if err != nil {
 		t.Error("something went wrong reading the command")
 	}
-	serverPutHandler(buffer)
+	serverPutHandler(buffer, true)
 
 	response := make([]byte, 3)
 	io.ReadFull(buffer, response)
@@ -35,7 +35,7 @@ func TestServerPutHandler(t *testing.T) {
 	// break first arg
 	buffer = bytes.NewBuffer([]byte("put93key212stored value"))
 	readCommandHeader(buffer)
-	serverPutHandler(buffer)
+	serverPutHandler(buffer, true)
 	response = make([]byte, 3)
 	buffer.Next(10)
 	io.ReadFull(buffer, response)
@@ -48,7 +48,7 @@ func TestServerPutHandler(t *testing.T) {
 	buffer = bytes.NewBuffer([]byte("put13key312stored value"))
 
 	readCommandHeader(buffer)
-	serverPutHandler(buffer)
+	serverPutHandler(buffer, true)
 
 	response = make([]byte, 3)
 	buffer.Next(11)
@@ -66,7 +66,7 @@ func TestServerGetHandler(t *testing.T) {
 	if err != nil {
 		t.Error("something went wrong reading the command")
 	}
-	serverPutHandler(buffer)
+	serverPutHandler(buffer, true)
 
 	response := make([]byte, 3)
 	io.ReadFull(buffer, response)
@@ -122,7 +122,7 @@ func TestServerDeleteHandler(t *testing.T) {
 		t.Error("something went wrong reading the command")
 	}
 
-	serverPutHandler(buffer)
+	serverPutHandler(buffer, true)
 
 	response := make([]byte, 3)
 	io.ReadFull(buffer, response)
@@ -137,7 +137,7 @@ func TestServerDeleteHandler(t *testing.T) {
 	if err != nil {
 		t.Error("something went wrong reading the command")
 	}
-	serverDeleteHandler(buffer)
+	serverDeleteHandler(buffer, true)
 	response = make([]byte, 3)
 	io.ReadFull(buffer, response)
 
@@ -148,7 +148,7 @@ func TestServerDeleteHandler(t *testing.T) {
 	// break the argument
 	buffer = bytes.NewBuffer([]byte("del23key"))
 	readCommandHeader(buffer)
-	serverDeleteHandler(buffer)
+	serverDeleteHandler(buffer, true)
 
 	response = make([]byte, 3)
 	buffer.Next(2)
@@ -206,16 +206,16 @@ func TestSendValue(t *testing.T) {
 
 func TestHandleServerCommand(t *testing.T) {
 	putBuffer := bytes.NewBuffer([]byte("put13key212stored value"))
-	handle(putBuffer)
+	handle(putBuffer, true)
 
 	getBuffer := bytes.NewBuffer([]byte("get13key"))
-	handle(getBuffer)
+	handle(getBuffer, true)
 
 	deleteBuffer := bytes.NewBuffer([]byte("del13key"))
-	handle(deleteBuffer)
+	handle(deleteBuffer, true)
 
 	byeBuffer := bytes.NewBuffer([]byte("bye"))
-	handle(byeBuffer)
+	handle(byeBuffer, true)
 }
 
 var value = ""
@@ -248,13 +248,13 @@ func BenchmarkReadCommandHeader(b *testing.B) {
 func BenchmarkServerPutHandler(b *testing.B) {
 	for i := 0; i < b.N; i++ {
 		buffer := bytes.NewBuffer([]byte("put13key212stored"))
-		serverPutHandler(buffer)
+		serverPutHandler(buffer, true)
 	}
 }
 
 func BenchmarkServerGetHandler(b *testing.B) {
 	buffer := bytes.NewBuffer([]byte("put13key212stored"))
-	serverPutHandler(buffer)
+	serverPutHandler(buffer, true)
 	b.ResetTimer()
 
 	for i := 0; i < b.N; i++ {
@@ -265,17 +265,17 @@ func BenchmarkServerGetHandler(b *testing.B) {
 
 func BenchmarkServerDeleteHandler(b *testing.B) {
 	buffer := bytes.NewBuffer([]byte("put13key212stored"))
-	serverPutHandler(buffer)
+	serverPutHandler(buffer, true)
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
 		buffer := bytes.NewBuffer([]byte("del13key"))
-		serverDeleteHandler(buffer)
+		serverDeleteHandler(buffer, true)
 	}
 }
 
 func BenchmarkHandle(b *testing.B) {
 	for i := 0; i < b.N; i++ {
 		buffer := bytes.NewBuffer([]byte("put13key212stored"))
-		handle(buffer)
+		handle(buffer, true)
 	}
 }

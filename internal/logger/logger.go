@@ -6,7 +6,7 @@ import (
 )
 
 func InitLogger() *log.Logger {
-	file, err := os.OpenFile("./logs/server.log",
+	file, err := os.OpenFile("C:/Users/Riott/go/src/tcpkvs/cmd/tcpkvsserver/logs/server.log",
 		os.O_CREATE|os.O_APPEND|os.O_WRONLY,
 		0644)
 	if err != nil {
